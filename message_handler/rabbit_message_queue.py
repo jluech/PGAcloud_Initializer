@@ -8,7 +8,7 @@ from message_handler.message_handler import MessageHandler
 QUEUE_NAME = "initializer"
 
 
-def receive_mutation_callback(channel, method, properties, body):
+def receive_initialization_callback(channel, method, properties, body):
     logging.debug(body)  # TODO: remove
     amount = body.get("payload")
     logging.info("rMQ:{queue_}: Received initialization request for {amount_} individuals".format(
@@ -75,7 +75,7 @@ class RabbitMessageQueue(MessageHandler):
         # Actively listen for messages in queue and perform callback on receive.
         channel.basic_consume(
             queue=QUEUE_NAME,
-            on_message_callback=receive_mutation_callback,
+            on_message_callback=receive_initialization_callback,
             auto_ack=True
         )
         logging.info("rMQ:{queue_}: Waiting for initialization requests.".format(
