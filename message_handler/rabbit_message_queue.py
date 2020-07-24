@@ -3,8 +3,8 @@ import logging
 
 import pika
 
-from message_handler.message_handler import MessageHandler
 from initializer.initialization import apply_initialization
+from message_handler.message_handler import MessageHandler
 
 EXCHANGE_NAME = "initializer"
 
@@ -17,13 +17,12 @@ def receive_initialization_callback(channel, method, properties, body):
         amount_=amount,
     ))
 
-    # TODO 106: generate individuals and retrieve the amount
     generated_individuals = apply_initialization(amount)
 
     remaining_destinations = body.get("destinations")
     send_message_to_queue(
         channel=channel,
-        destinations=generated_individuals,
+        destinations=remaining_destinations,
         payload=generated_individuals
     )
 
@@ -38,7 +37,7 @@ def send_message_to_queue(channel, destinations, payload):
     channel.exchange_declare(exchange="", routing_key=next_recipient, auto_delete=True, durable=True)
 
     # Send message to given recipient.
-    amount = payload  # TODO 106: generate individuals and retrieve the amount
+    amount = payload.__len__()
     logging.info("rMQ: Sending {amount_} individuals to destinations {dest_}.".format(
         amount_=amount,
         dest_=destinations,
