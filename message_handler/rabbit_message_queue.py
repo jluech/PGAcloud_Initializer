@@ -4,26 +4,28 @@ import logging
 import pika
 
 from message_handler.message_handler import MessageHandler
+from initializer.initialization import apply_initialization
 
-QUEUE_NAME = "initializer"
+EXCHANGE_NAME = "initializer"
 
 
 def receive_initialization_callback(channel, method, properties, body):
     logging.debug(body)  # TODO: remove
     amount = body.get("payload")
     logging.info("rMQ:{queue_}: Received initialization request for {amount_} individuals".format(
-        queue_=QUEUE_NAME,
+        queue_=EXCHANGE_NAME,
         amount_=amount,
     ))
 
-    # mutated_pair = apply_mutation(pair.ind1, pair.ind2)
-    #
-    # remaining_destinations = body.get("destinations")
-    # send_message_to_queue(
-    #     channel=channel,
-    #     destinations=remaining_destinations,
-    #     payload=mutated_pair
-    # )
+    # TODO 106: generate individuals and retrieve the amount
+    generated_individuals = apply_initialization(amount)
+
+    remaining_destinations = body.get("destinations")
+    send_message_to_queue(
+        channel=channel,
+        destinations=generated_individuals,
+        payload=generated_individuals
+    )
 
 
 def send_message_to_queue(channel, destinations, payload):
@@ -69,17 +71,18 @@ class RabbitMessageQueue(MessageHandler):
         # Define communication channel.
         channel = self.connection.channel()
 
-        # Create queue for selection.
-        channel.queue_declare(queue=QUEUE_NAME, auto_delete=True, durable=True)
+        # Create queue for initialization and bind it to broadcast exchange.
+        queue = channel.queue_declare(auto_delete=True, durable=True)
+        channel.queue_bind(queue, exchange=EXCHANGE_NAME)
 
         # Actively listen for messages in queue and perform callback on receive.
         channel.basic_consume(
-            queue=QUEUE_NAME,
+            queue=queue,
             on_message_callback=receive_initialization_callback,
             auto_ack=True
         )
         logging.info("rMQ:{queue_}: Waiting for initialization requests.".format(
-            queue_=QUEUE_NAME
+            queue_=EXCHANGE_NAME
         ))
         channel.start_consuming()
 
