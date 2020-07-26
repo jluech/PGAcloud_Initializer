@@ -2,7 +2,7 @@ import logging
 import random
 
 from population.individual import Individual
-from utilities.utils import get_property
+from utilities import utils
 
 
 def apply_initialization(amount):
@@ -16,7 +16,8 @@ def apply_initialization(amount):
         for c in range(capacity):
             bit_flip = random.randint(0, 99)
             solution += "1" if (bit_flip % 2) else "0"
-        generated_individuals.append(Individual(solution))
-        logging.debug(solution)  # TODO: remove
+        # generated_individuals.append(Individual(solution))
+        generated_individuals.append(Individual(solution, 5))  # TODO: remove
+        logging.info("{idx_} - {sol_}".format(idx_=i, sol_=solution))  # TODO: remove
 
     return generated_individuals

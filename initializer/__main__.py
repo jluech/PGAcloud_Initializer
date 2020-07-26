@@ -4,9 +4,9 @@ from database_handler.handlers import DatabaseHandlers
 from database_handler.redis_handler import RedisHandler
 from message_handler.handlers import MessageHandlers
 from message_handler.rabbit_message_queue import RabbitMessageQueue
-from utilities.utils import get_pga_id, set_property
+from utilities import utils
 
-logging.basicConfig(level=logging.DEBUG)  # TODO: remove and reduce to INFO
+logging.basicConfig(level=logging.INFO)  # TODO: remove and reduce to INFO
 
 DATABASE_HANDLER = DatabaseHandlers.Redis
 MESSAGE_HANDLER = MessageHandlers.RabbitMQ
@@ -14,10 +14,10 @@ RELEVANT_PROPERTIES = ["knapsack_capacity"]
 
 
 def listen_for_initialization():
-    pga_id = get_pga_id()
+    pga_id = utils.get_pga_id()
     database_handler = get_database_handler(pga_id)
     for prop in RELEVANT_PROPERTIES:
-        set_property(
+        utils.set_property(
             property_key=prop,
             property_value=database_handler.retrieve(prop)
         )

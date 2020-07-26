@@ -41,3 +41,8 @@ def get_property(property_key):
 
 def set_property(property_key, property_value):
     __PROPERTIES[property_key] = property_value
+    logging.info("Successfully set property '{prop_}'={val_}".format(
+        prop_=property_key,
+        val_=__PROPERTIES[property_key],
+    ))
+    logging.info(__PROPERTIES)  # TODO: remove
