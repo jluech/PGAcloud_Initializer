@@ -6,33 +6,29 @@ import pika
 from initializer.initialization import apply_initialization
 from message_handler.message_handler import MessageHandler
 from population.individual import IndividualEncoder
-
-EXCHANGE_NAME = "initializer"
+from utilities import utils
 
 
 def receive_initialization_callback(channel, method, properties, body):
-    payload_dict = json.loads(body.decode("utf-8"))
-    amount = payload_dict.get("payload")
+    exchange_name = utils.get_messaging_source()
+
+    amount = int(body.decode("utf-8"))
     logging.info("rMQ:{queue_}: Received initialization request for {amount_} individuals.".format(
-        queue_=EXCHANGE_NAME,
+        queue_=exchange_name,
         amount_=amount,
     ))
 
     generated_individuals = apply_initialization(amount)
 
-    remaining_destinations = payload_dict.get("destinations")
     send_message_to_queue(
         channel=channel,
-        destinations=remaining_destinations,
         payload=generated_individuals
     )
 
 
-def send_message_to_queue(channel, destinations, payload):
-    # This will create the exchange if it doesn't already exist.
-    next_recipient = destinations.pop(0)
-
+def send_message_to_queue(channel, payload):
     # Route the message to the next queue in the model.
+    next_recipient = utils.get_messaging_target()
     channel.queue_declare(queue=next_recipient, auto_delete=True, durable=True)
 
     # Send message to given recipient.
@@ -41,14 +37,10 @@ def send_message_to_queue(channel, destinations, payload):
         amount_=amount,
         dest_=next_recipient,
     ))
-    payload_json = json.dumps(payload, cls=IndividualEncoder)
     channel.basic_publish(
         exchange="",
         routing_key=next_recipient,
-        body=json.dumps({
-            "destinations": destinations,
-            "payload": payload_json
-        }),
+        body=json.dumps(payload, cls=IndividualEncoder),
         # Delivery mode 2 makes the broker save the message to disk.
         # This will ensure that the message be restored on reboot even
         # if RabbitMQ crashes before having forwarded the message.
@@ -71,12 +63,13 @@ class RabbitMessageQueue(MessageHandler):
         channel = self.connection.channel()
 
         # Create the exchange if it doesn't exist already.
-        channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="fanout", auto_delete=True, durable=True)
+        exchange_name = utils.get_messaging_source()
+        channel.exchange_declare(exchange=exchange_name, exchange_type="fanout", auto_delete=True, durable=True)
 
         # Create queue for initialization and bind it to broadcast exchange.
         # https://www.rabbitmq.com/queues.html#server-named-queues
         channel.queue_declare(queue="", auto_delete=True, durable=True)
-        channel.queue_bind(queue="", exchange=EXCHANGE_NAME)
+        channel.queue_bind(queue="", exchange=exchange_name)
 
         # Actively listen for messages in queue and perform callback on receive.
         channel.basic_consume(
@@ -85,7 +78,7 @@ class RabbitMessageQueue(MessageHandler):
             auto_ack=True
         )
         logging.info("rMQ:{queue_}: Waiting for initialization requests.".format(
-            queue_=EXCHANGE_NAME
+            queue_=exchange_name
         ))
         channel.start_consuming()
 
@@ -93,11 +86,10 @@ class RabbitMessageQueue(MessageHandler):
         logging.info("rMQ: CLOSING CONNECTION")
         self.connection.close()
 
-    def send_message(self, pair, remaining_destinations):
+    def send_message(self, individuals):
         # Define communication channel.
         channel = self.connection.channel()
         send_message_to_queue(
             channel=channel,
-            destinations=remaining_destinations,
-            payload=pair
+            payload=individuals
         )

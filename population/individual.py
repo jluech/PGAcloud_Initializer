@@ -1,4 +1,4 @@
-from json import JSONEncoder, JSONDecoder
+from json import JSONEncoder
 
 DEFAULT_FITNESS = 0
 
@@ -12,8 +12,3 @@ class Individual(object):
 class IndividualEncoder(JSONEncoder):
     def default(self, obj):
         return obj.__dict__
-
-
-class IndividualDecoder(JSONDecoder):
-    def default(self, obj):
-        return Individual(obj["solution"], obj["fitness"])
