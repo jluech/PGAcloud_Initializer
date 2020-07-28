@@ -10,20 +10,21 @@ from utilities import utils
 
 
 def receive_initialization_callback(channel, method, properties, body):
-    exchange_name = utils.get_messaging_source()
+    queue_name = utils.get_messaging_source()
 
     amount = int(body.decode("utf-8"))
     logging.info("rMQ:{queue_}: Received initialization request for {amount_} individuals.".format(
-        queue_=exchange_name,
+        queue_=queue_name,
         amount_=amount,
     ))
 
     generated_individuals = apply_initialization(amount)
 
-    send_message_to_queue(
-        channel=channel,
-        payload=generated_individuals
-    )
+    for individual in generated_individuals:
+        send_message_to_queue(
+            channel=channel,
+            payload=individual
+        )
 
 
 def send_message_to_queue(channel, payload):
@@ -32,9 +33,8 @@ def send_message_to_queue(channel, payload):
     channel.queue_declare(queue=next_recipient, auto_delete=True, durable=True)
 
     # Send message to given recipient.
-    amount = payload.__len__()
-    logging.info("rMQ: Sending {amount_} individuals to {dest_}.".format(
-        amount_=amount,
+    logging.info("rMQ: Sending {ind_} to {dest_}.".format(
+        ind_=payload,
         dest_=next_recipient,
     ))
     channel.basic_publish(
@@ -62,23 +62,17 @@ class RabbitMessageQueue(MessageHandler):
         # Define communication channel.
         channel = self.connection.channel()
 
-        # Create the exchange if it doesn't exist already.
-        exchange_name = utils.get_messaging_source()
-        channel.exchange_declare(exchange=exchange_name, exchange_type="fanout", auto_delete=True, durable=True)
-
-        # Create queue for initialization and bind it to broadcast exchange.
-        # https://www.rabbitmq.com/queues.html#server-named-queues
-        channel.queue_declare(queue="", auto_delete=True, durable=True)
-        channel.queue_bind(queue="", exchange=exchange_name)
+        # Create queue for initialization.
+        queue_name = utils.get_messaging_source()
+        channel.queue_declare(queue=queue_name, auto_delete=True, durable=True)
 
         # Actively listen for messages in queue and perform callback on receive.
         channel.basic_consume(
-            queue="",
+            queue=queue_name,
             on_message_callback=receive_initialization_callback,
-            auto_ack=True
         )
         logging.info("rMQ:{queue_}: Waiting for initialization requests.".format(
-            queue_=exchange_name
+            queue_=queue_name
         ))
         channel.start_consuming()
 
