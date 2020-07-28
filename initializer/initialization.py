@@ -16,8 +16,12 @@ def apply_initialization(amount):
         for c in range(capacity):
             bit_flip = random.randint(0, 99)
             solution += "1" if (bit_flip % 2) else "0"
-        # generated_individuals.append(Individual(solution))
-        generated_individuals.append(Individual(solution, 5))  # TODO: remove
-        logging.info("{idx_} - {sol_}".format(idx_=i, sol_=solution))  # TODO: remove
+        # generated = Individual(solution)
+        generated = Individual(solution, random.randint(0, 1000)/10)  # TODO: replace with original
+        generated_individuals.append(generated)
+        logging.info("Generated {idx_} - {sol_}".format(
+            idx_=i+1,
+            sol_=generated)
+        )
 
     return generated_individuals
