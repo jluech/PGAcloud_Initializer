@@ -8,9 +8,7 @@ from utilities import utils
 def apply_initialization(amount):
     # Initializes and returns a list of <amount> randomly generated Individual's.
     logging.info("Initializing {amount_} individuals.".format(amount_=amount))
-    capacity = int(utils.get_property("knapsack_capacity").decode("utf-8"))
-    # capacity = int(utils.get_property("knapsack_capacity"))
-    # capacity = 150  # TODO: remove
+    capacity = int(utils.get_property("item_count"))
 
     generated_individuals = []
     for i in range(amount):

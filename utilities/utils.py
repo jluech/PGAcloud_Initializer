@@ -4,7 +4,7 @@ from re import match
 
 import yaml
 
-__PGA_ID = None
+__CONTAINER_CONF = None
 __PROPERTIES = {}
 
 
@@ -14,25 +14,40 @@ def parse_yaml(yaml_file_path):
     return content
 
 
+def get_messaging_source():
+    if not __CONTAINER_CONF:
+        __retrieve_container_config()
+    return __CONTAINER_CONF["source"]
+
+
+def get_messaging_target():
+    if not __CONTAINER_CONF:
+        __retrieve_container_config()
+    return __CONTAINER_CONF["target"]
+
+
 def get_pga_id():
-    if not __PGA_ID:
-        return __retrieve_pga_id()
-    return __PGA_ID
+    if not __CONTAINER_CONF:
+        __retrieve_container_config()
+    return __CONTAINER_CONF["pga_id"]
 
 
-def __retrieve_pga_id():
+def __retrieve_container_config():
     # Retrieve locally saved config file.
-    files = [f for f in os.listdir("/") if match(r'[0-9]+--config\.yml', f)]
+    files = [f for f in os.listdir("/") if match(r'[0-9]+--initializer-config\.yml', f)]
     # https://stackoverflow.com/questions/2225564/get-a-filtered-list-of-files-in-a-directory/2225927#2225927
     # https://regex101.com/
 
     if not files.__len__() > 0:
-        raise Exception("Error retrieving the PGA ID: No matching config file found!")
+        raise Exception("Error retrieving the container config: No matching config file found!")
     config = parse_yaml("/{}".format(files[0]))
-    global __PGA_ID
-    __PGA_ID = config.get("pga_id")
-    logging.info("PGA_ID {id_} retrieved.".format(id_=__PGA_ID))
-    return __PGA_ID
+    global __CONTAINER_CONF
+    __CONTAINER_CONF = {
+        "pga_id": config.get("pga_id"),
+        "source": config.get("source"),
+        "target": config.get("target")
+    }
+    logging.info("Container config retrieved: {conf_}".format(conf_=__CONTAINER_CONF))
 
 
 def get_property(property_key):
