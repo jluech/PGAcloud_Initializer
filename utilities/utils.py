@@ -60,4 +60,3 @@ def set_property(property_key, property_value):
         prop_=property_key,
         val_=__PROPERTIES[property_key],
     ))
-    logging.info(__PROPERTIES)  # TODO: remove
