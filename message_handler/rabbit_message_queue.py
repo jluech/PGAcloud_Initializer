@@ -29,8 +29,7 @@ def receive_initialization_callback(channel, method, properties, body):
 
 def send_message_to_queue(channel, payload):
     # Route the message to the next queue in the model.
-    # next_recipient = utils.get_messaging_target()
-    next_recipient = "generation"  # TODO: replace with original
+    next_recipient = utils.get_messaging_target()
     channel.queue_declare(queue=next_recipient, auto_delete=True, durable=True)
 
     # Send message to given recipient.
@@ -76,10 +75,6 @@ class RabbitMessageQueue(MessageHandler):
             queue_=queue_name
         ))
         channel.start_consuming()
-
-        # Close connection when finished. TODO: check if prematurely closing connection
-        logging.info("rMQ: CLOSING CONNECTION")
-        self.connection.close()
 
     def send_message(self, individuals):
         # Define communication channel.
