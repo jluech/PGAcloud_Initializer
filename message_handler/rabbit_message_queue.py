@@ -12,13 +12,16 @@ from utilities import utils
 def receive_initialization_callback(channel, method, properties, body):
     queue_name = utils.get_messaging_source()
 
-    amount = int(body.decode("utf-8"))
-    logging.info("rMQ:{queue_}: Received initialization request for {amount_} individuals.".format(
+    payload_dict = json.loads(body)
+    amount = int(payload_dict.get("amount"))
+    individual_id = int(payload_dict.get("id"))
+
+    logging.info("rMQ:{queue_}: Received initialization request for {amount_} individual(s).".format(
         queue_=queue_name,
         amount_=amount,
     ))
 
-    generated_individuals = apply_initialization(amount)
+    generated_individuals = apply_initialization(amount, individual_id)
 
     for individual in generated_individuals:
         send_message_to_queue(

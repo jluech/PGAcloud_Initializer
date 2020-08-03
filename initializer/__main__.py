@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 DATABASE_HANDLER = DatabaseHandlers.Redis
 MESSAGE_HANDLER = MessageHandlers.RabbitMQ
-RELEVANT_PROPERTIES = ["item_count"]
+RELEVANT_PROPERTIES = ["RANDOM_SEED", "item_count"]
 
 
 def listen_for_initialization():
